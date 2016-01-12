@@ -1,0 +1,194 @@
+\section{Methods}
+
+In this paper, we present two multiple try versions of Additive Transformation based Markov Chain Monte Carlo. 
+
+Bullet points so far 
+
+\begin{itemize}
+\item Methods: Algorithms for Versions 1 and 2 of MT-TMCMC
+\item Methods: To present the schematic diagram of the MT-TMCMC method (similar to Fig 1 of Martino and Read 2013, \cite{Martino2013}).
+\item  Methods: Show detailed balance condition holds for these methods
+\item Methods: Irreducibility and aperiodicity of the MT-TMCMC method (will be similar to the one for TMCMC).
+\item  Results: Simulation comparison (KS test) between the two versions of MT-TMCMC
+\item  Results: Simulation comparison (KS test) between general TMCMC and MT-TMCMC and RWMH.
+\item  Results: A toy simulation study depicting how quick the space traversal is for MT-TMCMC (similar to Fig 4 of Martino and 
+Read 2013, \cite{Martino2013}).
+\item Results: Compare this approach and its speed in high dimensions to the multiple try RWMH approach as suggested by 
+Liu, Liang and Wong 2001, \cite{Liu2001}.
+\item : Discussions: Talk about the implementation of MT-TMCMC in the package \textbf{tmcmcR}.
+\end{itemize}
+
+
+The other possible directions worth investigating 
+
+\begin{itemize}
+\item Optimal scaling study for MT-TMCMC method (similar in line to Bedard, Douc and Moulines 2012, \cite{Bedard2012}.
+\item Geometric ergodicity of the MT-TMCMC sampler. 
+\end{itemize}
+
+
+\begin{algorithm}
+\caption{\small{Multiple Try Transformation based Markov Chain Monte Carlo (MT-TMCMC): Ver. 1}}\label{mt-tmcmc-ver1}
+\begin{itemize}
+\item Suppose we want to draw samples from a $D$ dimensional target density $\pi$. 
+\item Start at the initial value $x_{0}$ and let the total number of iterations be $N$. 
+\item For $t=0,1,2,\cdots, N-1$,
+\begin{enumerate}
+\item Fix parameters K and L (user defined). Draw step sizes $\epsilon^{(t)}_{1}, \epsilon^{(t)}_{2}, \cdots, \epsilon^{(t)}_{K} \sim g(.)$ where $supp(g) =\mathbb{R}^{+}$.  Draw step signs  $b^{(t)}_{kl}$ for $k=1,2, \cdots, K$ and $l=1,2, \cdots, L$,such that 
+\begin{align*}
+b^{(t)}_{kl} = + 1 \hspace{1 cm} prob \hspace{0.5 cm} 0.5 \\
+b^{(t)}_{kl} = - 1 \hspace{1 cm} prob \hspace{0.5 cm} 0.5 
+\end{align*}
+\item Propose candidate moves $y^{(t)}_{kl}$ as follows 
+$$ y^{(t)}_{kl} = x^{(t)} + b^{(t)}_{kl}\epsilon^{(t)}_{k} \hspace{1 cm} k =1,2,\cdots, K, \hspace{1 cm} l =1,2,\cdots, L $$
+
+\item Compute target density values at each candidate move, namely $\pi_{kl}$ and draw a random move $y^{\star}$ 
+from $y^{(t)}_{kl}$ with probability $ \frac{\pi_{kl}} {\sum{k,l} \pi_{kl}}$.
+
+\item Determine the $k$ and $l$ corresponding to the move selected.
+
+$$ (k^{\times}, l^{\times}) : = find \left \{(k,l): y^{(t)}_{kl} = y^{\star} \right \} $$
+
+\item  Draw $(K-1)$ step sizes  $\epsilon^{(*,t)}_{1}, \epsilon^{(*, t)}_{2}, \cdots, \epsilon^{(*, t)}_{k^{\star}-1},  \epsilon^{(*, t)}_{k^{\star}+1}, \cdots,  \epsilon^{(*, t)}_{K} \sim g(.)$ and let $\epsilon^{(*,t)}_{k^{\times}}$ deterministically determined as 
+
+$$  \epsilon^{(*,t)}_{k^{\times}}  : = \left | y^{\star}_{d} - x^{(t)} _{d} \right |  \hspace{1 cm} \forall d=1,2, \cdots, D $$
+
+\item Similarly draw $b^{(*,t)}_{kl}$ for $k=1,2, \cdots, K$ and $l=1,2,\cdots,(L-1)$, similar to $b^{(t)}_{kl}$ and define 
+
+$$ b^{(*,t)}_{k^{\times}l^{\times}} : = - \frac{y^{\star}_{d} - x^{(t)} _{d} }{ \epsilon^{(*,t)}_{k^{\times} }} $$
+
+\item Draw reverse step candidates $x^{(*,t)}_{kl}$ as follows 
+
+$$ x^{(*,t)}_{kl} : =  y^{(t)}_{kl}  + b^{(*,t)}_{kl} \epsilon^{(*,t)}_{k} $$
+
+\item By definition of $\epsilon^{(*,t)}$ and $b^{(*,t)}$, we have 
+
+$$ x^{(*,t)}_{kl} = x^{(t)} $$
+
+\item Accept the candidate move $y^{(\star)}$ with acceptance rate defined as follows 
+
+$$ acc :=  min \left \{ 1, \frac{\sum_{kl}  y^{(t)}_{kl} } {\sum_{kl} x^{(*,t)}_{kl} } \right \}  $$
+
+\item Draw $u \sim \mathcal{U}(0,1)$. If $u < acc$, 
+
+$$ x^{(t+1)} : = y^{(t)}  $$
+else 
+$$ x^{(t+1)} : = x^{(t)} $$
+
+\end{enumerate}
+\item  End For
+\end{itemize}
+\end{algorithm}
+
+
+\begin{algorithm}
+\caption{\small{Multiple Try Transformation based Markov Chain Monte Carlo(MT-TMCMC): Ver. 2}}\label{mt-tmcmc-ver1}
+\begin{itemize}
+\item Suppose we want to draw samples from a $D$ dimensional target density $\pi$. 
+\item Start at the initial value $x_{0}$ and let the total number of iterations be $N$. 
+\item For $t=0,1,2,\cdots, N-1$,
+\begin{enumerate}
+\item Fix parameters K and L (user defined). Draw step sizes $\epsilon^{(t)}_{1}, \epsilon^{(t)}_{2}, \cdots, \epsilon^{(t)}_{K} \sim g(.)$ where $supp(g) =\mathbb{R}^{+}$.  Draw step signs  $b^{(t)}_{kl}$ for $k=1,2, \cdots, K$ and $l=1,2, \cdots, L$,such that 
+\begin{align*}
+b^{(t)}_{kl} = + 1 \hspace{1 cm} prob \hspace{0.5 cm} 0.5 \\
+b^{(t)}_{kl} = - 1 \hspace{1 cm} prob \hspace{0.5 cm} 0.5 
+\end{align*}
+\item Propose candidate moves $y^{(t)}_{kl}$ as follows 
+$$ y^{(t)}_{kl} = x^{(t)} + b^{(t)}_{kl}\epsilon^{(t)}_{k} \hspace{1 cm} k=1,2,\cdots, K, \hspace{1 cm} l=1,2,\cdots, L $$
+
+\item Compute target density values at each candidate move, namely $\pi_{kl}$ and draw a random move $y^{\star}$ 
+from $y^{(t)}_{kl}$ with probability $ \frac{\pi_{kl}} {\sum{k,l} \pi_{kl}}$.
+
+\item Define 
+
+$$ (k^{'}, l^{'}) : = find \left \{(k,l): y^{(t)}_{kl} = y^{\star} \right \} $$
+
+\item Similarly draw $b^{(*,t)}_{kl}$ for $k=1,2, \cdots, K$, $l=1,2,\cdots, L$,  $(k,l) \neq (k^{'}, l^{'})$ and similar to $b^{(t)}_{kl}$, define 
+
+$$ b^{(*,t)}_{k^{'}l^{'}} : = - b^{(t)}_{k^{'}l^{'}} $$
+
+\item Draw reverse step candidates $x^{(*,t)}_{kl}$ as follows 
+
+$$ x^{(*,t)}_{kl} : =  y^{(t)}_{kl}  + b^{(*,t)}_{kl} \epsilon^{(*,t)}_{k} $$
+
+\item By definition of $\epsilon^{(*,t)}$ and $b^{(*,t)}$, we have 
+
+$$ x^{(*,t)}_{k^{'}l^{'}} = x^{(t)} $$
+
+\item Accept the candidate move $y^{(\star)}$ with acceptance rate defined as follows 
+
+$$ acc :=  min \left \{ 1, \frac{\sum_{kl}  y^{(t)}_{kl} } {\sum_{kl} x^{(*,t)}_{kl} } \right \}  $$
+
+\item Draw $u \sim \mathcal{U}(0,1)$. If $u < acc$, 
+
+$$ x^{(t+1)} : = y^{(t)}  $$
+
+else 
+
+$$ x^{(t+1)} : = x^{(t)} $$
+\end{enumerate}
+\item  End For
+\end{itemize}
+\end{algorithm}
+
+We next prove that the detailed balance condition holds for Versions $1$ and $2$ of the Multiple Try TMCMC approach. 
+
+\begin{theorem}
+\label{theorem:theorem1}
+Detailed balance holds for Algorithm 1 and Algorithm 2, implying that the chains generated by these algorithms converges to the target density $\pi$. 
+\end{theorem}
+
+The proof of detailed balance is motivated by the approach followed by \cite{Liu2000} and \cite{Martino2013}. We first prove this result for Algorithm 1. To prove this, if $x$ be the current state of the Markov chain and $y$ be the subsequent move, let $q(.|x)$ be the transition probability density function given the current location being $x$. Then we have to show 
+
+$$ \pi(x) \mathcal{Q}(y | x)  = \pi(y) \mathcal{Q}(x | y) $$
+
+Note that we can write 
+
+$$ \mathcal{Q}(y | x) = KL \mathcal{Q}(y= y_{lk} | x, k, l) $$
+
+where $k \in \left \{ 1, 2, \cdots, K \right \}$ be the set of step-sizes  and $l  \in \left \{ 1, 2, \cdots, L \right \}$ be the set of step signs per step size.  
+
+So, we have to ideally show for each $k$ and $l$, 
+
+\begin{equation} \label{eq:identity}
+\pi (x) \mathcal{Q}(y | x, k, l) = \pi(y) \mathcal{Q}(x | y, k, l) 
+\end{equation}
+
+\begin{align*}
+\pi(x) \mathcal{Q}(y | x, k, l)  & = \pi (x) \sum_{\left \{ \substack{b_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\
+(k,l) \neq (k^{'}, l^{'}) \\ b^{(r)}_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\ (k,l) \neq (k^{'}, l^{'})}  \right \}} \int_{ \left \{ \substack{\epsilon_k > 0,\\ k \neq k^{'}  \\  \epsilon^{(r)}_k > 0 \\ k \neq k^{'}}\right \}}   \frac{\pi(y)}{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y_{k^{'},l^{'}})}   \\
+& \times min \left \{ 1, \frac{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y_{k^{'},l^{'}})} {\pi(x) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(x_{*, k^{'},l^{'}})} \right \} d \epsilon_1 \cdots d \epsilon_{k-1} d \epsilon_{k+1} \cdots \epsilon_{K} d \epsilon^{(r)}_1 \cdots d \epsilon^{(r)}_{k-1} d \epsilon^{(r)}_{k+1} \cdots \epsilon^{(r)}_{K} \\
+& =  \sum_{\left \{ \substack{b_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\
+(k,l) \neq (k^{'}, l^{'}) \\ b^{(r)}_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\ (k,l) \neq (k^{'}, l^{'})}  \right \}} \int_{ \left \{ \substack{\epsilon_k > 0,\\ k \neq k^{'}  \\  \epsilon^{(r)}_k > 0 \\ k \neq k^{'}}\right \}} min \left \{ \frac{1}{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y_{k^{'},l^{'}})}, \frac{1}{\pi(x) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(x_{*, k^{'},l^{'}})} \right \}  \\
+& \times \pi(x) \pi(y)  d \epsilon_1 \cdots d \epsilon_{k-1} d \epsilon_{k+1} \cdots \epsilon_{K} d \epsilon^{(r)}_1 \cdots d \epsilon^{(r)}_{k-1} d \epsilon^{(r)}_{k+1} \cdots \epsilon^{(r)}_{K} \\
+& =  \pi(x) \pi(y)  \sum_{\left \{ \substack{b_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\
+(k,l) \neq (k^{'}, l^{'}) \\ b^{(r)}_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\ (k,l) \neq (k^{'}, l^{'})}  \right \}} \int_{ \left \{ \substack{\epsilon_k > 0,\\ k \neq k^{'}  \\  \epsilon^{(r)}_k > 0 \\ k \neq k^{'}}\right \}} min \left \{ \frac{1}{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(x+b_{k^{'}l^{'}}\epsilon_{k^{'}})},  \right . \\
+& \left . \frac{1}{\pi(x) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y+b^{(r)}_{k^{'}l^{'}} \epsilon^{(r)}_{k^{'}})} \right \} d \epsilon_1 \cdots d \epsilon_{k-1} d \epsilon_{k+1} \cdots \epsilon_{K} d \epsilon^{(r)}_1 \cdots d \epsilon^{(r)}_{k-1} d \epsilon^{(r)}_{k+1} \cdots \epsilon^{(r)}_{K} \\
+\end{align*}
+
+Note that this function is symmetric is symmetric in $x$ and $y$ as the distribution of $b$ and $b^{(r)}$ are iid and also $\epsilon_{l}, l=1,2,\cdots,k-1,k+1, \cdots, K$ and $\epsilon^{(r)}_{l}, l=1,2,\cdots, k-1, k+1, \cdots, K$ are all independent and identically distributed. Also in the $\sum_{(k^{'},l^{'}) \neq (k,l)}$, there are also terms that contain $k$ and $l \neq l^{'}$, and $\epsilon_{k}$ is fixed.
+
+$$ \epsilon_{k} = \left | y_{d} -x_{d}  \right | \hspace{1 cm} d=1,2,\cdots, D $$
+
+However $\epsilon_{k}$ occurs $L-1$ times in both the sums in the above expression and $b_{kl^{'}} \epsilon_{k}$ has the same distribution as $b^{(r)}_{kl^{'}} \epsilon_{k}$. This implies that \textbf{Eqn~\ref{eq:identity}} holds true and the detailed balance holds for Version 1 of the Multiple Try TMCMC algorithm. 
+
+For Algorithm 2, the approach is primarily similar, and we can write 
+
+\begin{align*}
+\pi(x) \mathcal{Q}(y | x, k, l)  & = \pi (x) \sum_{\left \{ \substack{b_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\
+(k,l) \neq (k^{'}, l^{'}) \\ b^{(r)}_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\ (k,l) \neq (k^{'}, l^{'})}  \right \}} \int_{ \left \{ \substack{\epsilon_k > 0,\\ k \neq k^{'} }\right \}}   \frac{\pi(y)}{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y_{k^{'},l^{'}})}   \\
+& \times min \left \{ 1, \frac{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y_{k^{'},l^{'}})} {\pi(x) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(x_{*, k^{'},l^{'}})} \right \} d \epsilon_1 \cdots d \epsilon_{k-1} d \epsilon_{k+1} \cdots \epsilon_{K}  \\
+& =  \pi(x) \pi(y)  \sum_{\left \{ \substack{b_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\
+(k,l) \neq (k^{'}, l^{'}) \\ b^{(r)}_{k^{'},l^{'}} \in \left \{-1,+1 \right \} \\ (k,l) \neq (k^{'}, l^{'})}  \right \}} \int_{ \left \{ \substack{\epsilon_k > 0,\\ k \neq k^{'}} \right \}} min \left \{ \frac{1}{\pi(y) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(x+b_{k^{'}l^{'}}\epsilon_{k^{'}})},  \right . \\
+& \left . \frac{1}{\pi(x) + \sum_{(k^{'},l^{'}) \neq (k,l)} \pi(y+b^{(r)}_{k^{'}l^{'}} \epsilon_{k^{'}})} \right \} d \epsilon_1 \cdots d \epsilon_{k-1} d \epsilon_{k+1} \cdots \epsilon_{K} \\
+\end{align*}
+
+The major modification in Algorithm 2 compared to Algorithm 1 is that the reverse step-sizes $\epsilon^{(r)}$ are same as forward step sizes $\epsilon$. By the similar logic as above, the expression is symmetric in $x$ and $y$ and therefore, detailed balance holds. \\[3 pt]
+
+MT-TMCMC chains are both $\lambda$-irreducible and aperiodic. Proof is similar to the one for standard TMCMC approach in \cite{Dey2015}, since ultimately the steps are along a similar manifold as in standard TMCMC and that is what drives $\lambda$ irreducibility and aperiodicity. 
+
+
+
+ 
+
+
